@@ -1,0 +1,6 @@
+*.tdms
+*.csv
+.ipynb_checkpoints/
+*.ipynb
+/__pycache__/
+/event_synching_testing4_counts/

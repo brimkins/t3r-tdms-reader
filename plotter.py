@@ -49,12 +49,12 @@ class Plotter:
         self.input_ax.yaxis.set_label_position('right')
         self.input_ax.yaxis.set_ticks_position('right')
                 
-        self.log_ax.set_zorder(10)
+        self.log_ax.set_zorder(3)
         self.input_ax.set_zorder(1)
         self.main_ax.set_zorder(2)
          
         # log_ax has to be used because events are registered on axis added last
-        self.span = SpanSelector(self.main_ax, self.onselect, 'horizontal', useblit=True,
+        self.span = SpanSelector(self.log_ax, self.onselect, 'horizontal', useblit=True,
                                 rectprops=dict(alpha=0.5, facecolor='red'))
 	
     
@@ -118,7 +118,8 @@ class Plotter:
             @cursor.connect("add")
             def on_add(sel):
                 if self.log_ax.get_visible():
-                    sel.annotation.set(text=self.log_annotations[int(sel.target.index.int)])
+                    sel.annotation.set(text=self.log_annotations[int(sel.target.index.int)], zorder=100)
+                    print(type(sel))
             
             self.log_ax.set_xlim(0, time[-1])
         
@@ -190,11 +191,19 @@ class Plotter:
     def set_display_input(self, disp):
         self.input_ax.set_visible(disp)
         self.log_ax.set_visible(disp)
+    
+        self.set_spanselect_axis(disp)
+        
+                                
+    def set_display_log(self, disp):
+        self.log_ax.set_visible(disp)
+        self.set_spanselect_axis(disp)
 
-
-    def toggle_input_display(self, val):
-        pass
-
+    def set_spanselect_axis(self, disp_log):
+        span_ax = self.log_ax if disp_log else self.main_ax
+    
+        self.span = SpanSelector(span_ax, self.onselect, 'horizontal', useblit=True,
+                                rectprops=dict(alpha=0.5, facecolor='red'))
 
     def onselect(self, _xmin, _xmax):
         self.xmin = _xmin
