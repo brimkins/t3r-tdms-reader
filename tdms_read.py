@@ -13,11 +13,13 @@ from nptdms import TdmsFile;
 class tdms :
     
     
-    def __init__(self,filename):
+    def __init__(self,filename, group_name='_counts'):
         #this opens the file but does not read it to not pollute memory
         self.tdmsfile = TdmsFile.open(filename);
-       #fetch the channel for counts
-        self.channel = self.tdmsfile['_counts']['Channel 0'];
+        
+        #fetch the channel for counts
+        self.group =  self.tdmsfile[group_name]
+        self.channel = self.group['Channel 0'];
         self.dt = self.channel.properties['wf_increment'];
         self.channel_NPoints = self.channel._length;
         
@@ -38,17 +40,21 @@ class tdms :
             bin_number=bin_number+1;
         return self.T,self.trace;
     
+    
     def TimetraceRange(self, t_start,t_end, bintime):
-        #select time region
+         #select time region
         T = np.arange(0,self.channel_NPoints*self.dt,self.dt);
-        T=T[(T>=t_start)&(T<=t_end)];
+             
+        t_start = max(t_start, T[0])
+        t_end = min(t_end, T[-1])
         
+        T=T[(T>=t_start)&(T<=t_end)];
         if(bintime<self.dt):    raise Exception('Selected bin time smaller than the sampling time of tdms file');
         points_in_bin = round(bintime/self.dt,3);
         if(points_in_bin %1 != 0): raise Exception('Selected bin time should be multiple of sampling time: '+ str(self.dt)+' binning time: '+ str(bintime)+' and points_in_bin='+str(points_in_bin));
         points_in_bin = int(points_in_bin);
         bins_in_trace = np.floor_divide(np.shape(T)[0],points_in_bin).astype(np.int);  
-        print(bins_in_trace);
+        
         if(bins_in_trace==0): raise Exception('Timetrace too short for selected bin time');
         
         Time = np.arange(0,bins_in_trace*bintime,bintime);
@@ -58,7 +64,7 @@ class tdms :
         while(bin_number<bins_in_trace):
             Trace[bin_number]=np.sum(self.channel[(bin_number+offset)*points_in_bin:(bin_number+offset+1)*points_in_bin]);
             bin_number=bin_number+1;
-        return Time,Trace;
+        return Time[:len(Trace)],Trace;
             
         
         
