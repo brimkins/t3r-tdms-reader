@@ -94,7 +94,7 @@ class Plotter:
             fn = self.abstractfile.filename(INPUT_EXT, f)
             file = tdms(fn, INPUT_EXT)
             
-            vx, vy = file.rebin(self.binsize)
+            vx, vy = file.rebin(input_binsize)
             vx = vx + time[-1]
             
             range = min(len(vx), len(vy))

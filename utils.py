@@ -7,13 +7,27 @@ TDMS = '.tdms'
 COUNTS = '_counts'
 
 
+def index_suffix(index, pad=4):
+    if index == 0:
+        return ''
+    
+    suff = str(index)
+    for i in range(pad-len(suff)):
+        suff = '0' + suff
+    return suff
+
 def make_extension(index, n_prefix):
     if index == 0:
         extension = ''
     else:
         n = str(index)
+        #n = '4' + n if len(n) == 1 else str(int(n) + 40)
         n = '0' + n if len(n) == 1 else n
-        extension = n_prefix + n 
+        n_int = int(n)
+        if n_int > 99:
+            extension = '0' + str(n_int)
+        else:
+            extension = n_prefix + n 
     return extension
     
 
@@ -27,28 +41,28 @@ class DIO_event:
 
 
 class AbstractFile:
-    def __init__(self, path, ext_func, n_prefix, extension=TDMS):
+    def __init__(self, path, ext_func, arg, extension=TDMS):
         self.base_path = path
         filename_comps = path.split('.')[0].split('\\')
         self.dir = '\\'.join(filename_comps[:-1]) + '\\'
         self.basename = filename_comps[-1][:-len(COUNTS)] # if python 3.9, change to str.removesuffix()
         self.ext_func = ext_func
         self.extension = extension
-        self.n_prefix = n_prefix
+        self.arg = arg
        
     def filename(self, suffix, index=0):
-        return self.dir + self.basename + suffix + self.ext_func(index, self.n_prefix) + self.extension
+        return self.dir + self.basename + suffix + self.ext_func(index, self.arg) + self.extension
 
 class AbstractCountsFile(AbstractFile):
     def __init__(self, abstractfile):
-        super().__init__(abstractfile.base_path, abstractfile.ext_func, abstractfile.n_prefix, abstractfile.extension)
+        super().__init__(abstractfile.base_path, abstractfile.ext_func, abstractfile.arg, abstractfile.extension)
 
     def filename(self, index=0):
         return super().filename(COUNTS, index)
         
 class AbstractInputFile(AbstractFile):
     def __init__(self, abstractfile):
-        super().__init__(abstractfile.base_path, abstractfile.ext_func, abstractfile.n_prefix, abstractfile.extension)
+        super().__init__(abstractfile.base_path, abstractfile.ext_func, abstractfile.arg, abstractfile.extension)
 
     def filename(self, index=0):
         return super().filename(INPUT_EXT, index)
@@ -66,17 +80,21 @@ def read_interval_from_multiple_files(abstract_file, file_length, _min, _max, bi
     datay = np.array([])
     
     for fn in filenames:
-        f = tdms(fn, channel_name)
-        fx, fy = f.rebin(bin)
-        
-        if fx[-1] < file_length *.98:
+        try:
+            f = tdms(fn, channel_name)
+        except FileNotFoundError:
             right_overflow = bin
+            break
+            
+        fx, fy = f.rebin(bin)
+              
+        if fn == filenames[-1]:
+            right_overflow = - (_max % file_length) + fx[-1]
         
         fx = fx + datax[-1]
         datax = np.append(datax, fx)
         datay = np.append(datay, fy)
                 
-    
     datax = np.delete(datax, 0)
     
     left_bound = int(left_underflow/bin)
