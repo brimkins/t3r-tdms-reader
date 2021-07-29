@@ -74,10 +74,7 @@ class Plotter:
             
             counts_t = np.append(counts_t, cx[:range])
             counts = np.append(counts, cy[:range])
-            
-            if len(cx) != len(cy):
-                print('unequal: ', fn)
-    
+                
         counts_t = np.delete(counts_t, 0)
         self.main_ax.plot(counts_t + self.translate_x, counts, color='r')
         self.main_ax.set_xlim(self.file_interval[0]*self.seconds_in_file,
@@ -119,7 +116,6 @@ class Plotter:
             def on_add(sel):
                 if self.log_ax.get_visible():
                     sel.annotation.set(text=self.log_annotations[int(sel.target.index.int)], zorder=100)
-                    print(type(sel))
             
             self.log_ax.set_xlim(0, time[-1])
         
